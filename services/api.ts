@@ -26,7 +26,8 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
     const data = isJson ? await response.json() : await response.text();
 
     if (!response.ok) {
-      throw new Error(isJson ? data.message || 'An error occurred' : 'Network error');
+      const errorMessage = isJson && data.message ? data.message : `HTTP error! status: ${response.status}`;
+      throw new Error(errorMessage);
     }
 
     return { data: data as T };
@@ -43,22 +44,60 @@ export async function login(email: string, password: string): Promise<ApiRespons
       'Accept': 'application/json',
     };
 
-    // Only add Origin header for web platform
+    // Add Origin and other CORS headers for web platform
     if (Platform.OS === 'web') {
-      headers['Origin'] = window.location.origin;
+      const origin = window.location.origin;
+      headers['Origin'] = origin;
+      // Add additional headers that might be needed for CORS
+      headers['X-Requested-With'] = 'XMLHttpRequest';
+    }
+
+    // First, check if the API is reachable
+    try {
+      await fetch(API_URL, {
+        method: 'HEAD',
+        headers,
+      });
+    } catch (error: any) {
+      console.error('API connectivity check failed:', error);
+      return { 
+        error: 'Unable to connect to the server. Please check your internet connection and try again.' 
+      };
     }
 
     const response = await fetch(`${API_URL}/login`, {
       method: 'POST',
       headers,
-      credentials: 'include', // Include cookies if needed
+      credentials: 'include',
+      mode: Platform.OS === 'web' ? 'cors' : undefined, // Explicitly set CORS mode for web
       body: JSON.stringify({ email, password }),
     });
 
     return await handleResponse<LoginResponse>(response);
   } catch (error: any) {
-    console.error('Login error:', error);
-    return { error: error.message || 'Failed to connect to the server' };
+    console.error('Login error details:', {
+      message: error.message,
+      stack: error.stack,
+      url: API_URL,
+      platform: Platform.OS
+    });
+
+    // Provide more specific error messages based on the error type
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      return { 
+        error: 'Network error: Unable to reach the server. Please check your internet connection.' 
+      };
+    }
+
+    if (error.message.includes('NetworkError')) {
+      return { 
+        error: 'Network error: The server is not accessible. This might be due to CORS configuration or network connectivity issues.' 
+      };
+    }
+
+    return { 
+      error: error.message || 'An unexpected error occurred while trying to log in. Please try again.' 
+    };
   }
 }
 
@@ -71,18 +110,23 @@ export async function resetPassword(email: string): Promise<ApiResponse<{ messag
 
     if (Platform.OS === 'web') {
       headers['Origin'] = window.location.origin;
+      headers['X-Requested-With'] = 'XMLHttpRequest';
     }
 
     const response = await fetch(`${API_URL}/reset-password`, {
       method: 'POST',
       headers,
       credentials: 'include',
+      mode: Platform.OS === 'web' ? 'cors' : undefined,
       body: JSON.stringify({ email }),
     });
 
     return await handleResponse<{ message: string }>(response);
   } catch (error: any) {
-    return { error: error.message || 'Failed to connect to the server' };
+    console.error('Reset password error:', error);
+    return { 
+      error: error.message || 'Failed to connect to the server' 
+    };
   }
 }
 
@@ -95,17 +139,22 @@ export async function verifyOTP(email: string, otp: string): Promise<ApiResponse
 
     if (Platform.OS === 'web') {
       headers['Origin'] = window.location.origin;
+      headers['X-Requested-With'] = 'XMLHttpRequest';
     }
 
     const response = await fetch(`${API_URL}/verify-otp`, {
       method: 'POST',
       headers,
       credentials: 'include',
+      mode: Platform.OS === 'web' ? 'cors' : undefined,
       body: JSON.stringify({ email, otp }),
     });
 
     return await handleResponse<{ message: string }>(response);
   } catch (error: any) {
-    return { error: error.message || 'Failed to connect to the server' };
+    console.error('OTP verification error:', error);
+    return { 
+      error: error.message || 'Failed to connect to the server' 
+    };
   }
 }
