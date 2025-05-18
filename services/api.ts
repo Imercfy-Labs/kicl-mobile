@@ -44,32 +44,17 @@ export async function login(email: string, password: string): Promise<ApiRespons
       'Accept': 'application/json',
     };
 
-    // Add Origin and other CORS headers for web platform
+    // Add Origin header for web platform
     if (Platform.OS === 'web') {
-      const origin = window.location.origin;
-      headers['Origin'] = origin;
-      // Add additional headers that might be needed for CORS
-      headers['X-Requested-With'] = 'XMLHttpRequest';
+      headers['Origin'] = window.location.origin;
     }
 
-    // First, check if the API is reachable
-    try {
-      await fetch(API_URL, {
-        method: 'HEAD',
-        headers,
-      });
-    } catch (error: any) {
-      console.error('API connectivity check failed:', error);
-      return { 
-        error: 'Unable to connect to the server. Please check your internet connection and try again.' 
-      };
-    }
-
+    // Skip the initial connectivity check as it's causing issues with CORS
     const response = await fetch(`${API_URL}/login`, {
       method: 'POST',
       headers,
-      credentials: 'include',
-      mode: Platform.OS === 'web' ? 'cors' : undefined, // Explicitly set CORS mode for web
+      credentials: Platform.OS === 'web' ? 'include' : 'omit', // Only include credentials for web
+      mode: Platform.OS === 'web' ? 'cors' : undefined,
       body: JSON.stringify({ email, password }),
     });
 
@@ -85,7 +70,7 @@ export async function login(email: string, password: string): Promise<ApiRespons
     // Provide more specific error messages based on the error type
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
       return { 
-        error: 'Network error: Unable to reach the server. Please check your internet connection.' 
+        error: 'Network error: Unable to reach the server. Please check your internet connection or ensure the server allows requests from this domain.' 
       };
     }
 
@@ -110,13 +95,12 @@ export async function resetPassword(email: string): Promise<ApiResponse<{ messag
 
     if (Platform.OS === 'web') {
       headers['Origin'] = window.location.origin;
-      headers['X-Requested-With'] = 'XMLHttpRequest';
     }
 
     const response = await fetch(`${API_URL}/reset-password`, {
       method: 'POST',
       headers,
-      credentials: 'include',
+      credentials: Platform.OS === 'web' ? 'include' : 'omit',
       mode: Platform.OS === 'web' ? 'cors' : undefined,
       body: JSON.stringify({ email }),
     });
@@ -139,13 +123,12 @@ export async function verifyOTP(email: string, otp: string): Promise<ApiResponse
 
     if (Platform.OS === 'web') {
       headers['Origin'] = window.location.origin;
-      headers['X-Requested-With'] = 'XMLHttpRequest';
     }
 
     const response = await fetch(`${API_URL}/verify-otp`, {
       method: 'POST',
       headers,
-      credentials: 'include',
+      credentials: Platform.OS === 'web' ? 'include' : 'omit',
       mode: Platform.OS === 'web' ? 'cors' : undefined,
       body: JSON.stringify({ email, otp }),
     });
