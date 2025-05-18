@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 const API_URL = Constants.expoConfig?.extra?.apiUrl || 'https://devkicl.duckdns.org/api';
 
@@ -37,14 +38,20 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
 
 export async function login(email: string, password: string): Promise<ApiResponse<LoginResponse>> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    // Only add Origin header for web platform
+    if (Platform.OS === 'web') {
+      headers['Origin'] = window.location.origin;
+    }
+
     const response = await fetch(`${API_URL}/login`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Origin': window.location.origin
-      },
-      mode: 'cors',
+      headers,
+      credentials: 'include', // Include cookies if needed
       body: JSON.stringify({ email, password }),
     });
 
@@ -57,14 +64,19 @@ export async function login(email: string, password: string): Promise<ApiRespons
 
 export async function resetPassword(email: string): Promise<ApiResponse<{ message: string }>> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    if (Platform.OS === 'web') {
+      headers['Origin'] = window.location.origin;
+    }
+
     const response = await fetch(`${API_URL}/reset-password`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Origin': window.location.origin
-      },
-      mode: 'cors',
+      headers,
+      credentials: 'include',
       body: JSON.stringify({ email }),
     });
 
@@ -76,14 +88,19 @@ export async function resetPassword(email: string): Promise<ApiResponse<{ messag
 
 export async function verifyOTP(email: string, otp: string): Promise<ApiResponse<{ message: string }>> {
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+
+    if (Platform.OS === 'web') {
+      headers['Origin'] = window.location.origin;
+    }
+
     const response = await fetch(`${API_URL}/verify-otp`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Origin': window.location.origin
-      },
-      mode: 'cors',
+      headers,
+      credentials: 'include',
       body: JSON.stringify({ email, otp }),
     });
 

@@ -32,7 +32,7 @@ export default {
     bundler: 'metro'
   },
   extra: {
-    apiUrl: process.env.EXPO_PUBLIC_API_URL || 'http://devkicl.duckdns.org/api'
+    apiUrl: process.env.EXPO_PUBLIC_API_URL || 'https://devkicl.duckdns.org/api'
   },
   plugins: []
 };
