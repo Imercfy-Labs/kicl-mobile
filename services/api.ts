@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-const API_URL =  'https://devkicl.duckdns.org/api';
+const API_URL = Constants.expoConfig?.extra?.apiUrl || 'https://devkicl.duckdns.org/api';
 
 interface ApiResponse<T> {
   data?: T;
